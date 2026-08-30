@@ -266,4 +266,24 @@ export class MessageRepository {
       .bind(errorMessage, nowIso(), id)
       .run();
   }
+
+  async deleteByConversation(conversationId: string): Promise<void> {
+    await this.db
+      .prepare("DELETE FROM messages WHERE conversation_id = ?")
+      .bind(conversationId)
+      .run();
+  }
+
+  async deleteOldResolved(days: number): Promise<number> {
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const result = await this.db
+      .prepare(
+        `DELETE FROM messages WHERE conversation_id IN (
+          SELECT id FROM conversations WHERE status = 'resolved' AND resolved_at < ?
+        )`
+      )
+      .bind(cutoff)
+      .run();
+    return result.meta.changes ?? 0;
+  }
 }

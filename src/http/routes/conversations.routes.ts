@@ -95,6 +95,25 @@ conversationsRoutes.post("/:id/resolve", async (c) => {
   return ok(await services.conversations.resolve(c.req.param("id")));
 });
 
+conversationsRoutes.delete("/:id", async (c) => {
+  const services = createServices(c.env);
+  await services.conversations.deleteConversation(c.req.param("id"));
+  return ok({ success: true, message: "Conversation deleted" });
+});
+
+conversationsRoutes.post("/cleanup", async (c) => {
+  const services = createServices(c.env);
+  const body = await c.req.json().catch(() => ({}));
+  const days = typeof body.days === "number" ? body.days : 30;
+  const result = await services.conversations.cleanupOldConversations(days);
+  return ok(result);
+});
+
+conversationsRoutes.get("/stats/summary", async (c) => {
+  const services = createServices(c.env);
+  return ok(await services.conversations.getStats());
+});
+
 function isUploadedFile(value: unknown): value is File {
   return (
     typeof value === "object" &&

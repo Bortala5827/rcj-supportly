@@ -38,6 +38,19 @@ webhookRoutes.post("/:channelAccountId", async (c) => {
       duplicates += 1;
     } else {
       accepted += 1;
+      // 发送邮件通知（异步，不阻塞响应）
+      services.email.sendNewMessageNotification({
+        contactName: inbound.contactName || "匿名访客",
+        channel: account.channelType === "telegram" ? "Telegram" : account.channelType === "web_chat" ? "网页" : account.channelType,
+        messageContent: inbound.content || "(空消息)",
+        conversationId: result.conversationId,
+      }).catch((e) => {
+        logger.warn("email_notification_failed", {
+          requestId: c.get("requestId"),
+          conversationId: result.conversationId,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      });
     }
 
     if (result.aiMessage) {

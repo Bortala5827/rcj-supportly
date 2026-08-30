@@ -128,4 +128,24 @@ export class ConversationService {
     await this.conversations.resolve(id);
     return this.getConversation(id);
   }
+
+  async deleteConversation(id: string): Promise<void> {
+    await this.getConversation(id);
+    // 先删除相关消息
+    await this.messages.deleteByConversation(id);
+    // 再删除会话
+    await this.conversations.delete(id);
+  }
+
+  async cleanupOldConversations(days: number = 30): Promise<{ deletedConversations: number; deletedMessages: number }> {
+    // 先删除旧消息
+    const deletedMessages = await this.messages.deleteOldResolved(days);
+    // 再删除旧会话
+    const deletedConversations = await this.conversations.deleteOldResolved(days);
+    return { deletedConversations, deletedMessages };
+  }
+
+  async getStats(): Promise<{ total: number; open: number; resolved: number }> {
+    return this.conversations.countAll();
+  }
 }

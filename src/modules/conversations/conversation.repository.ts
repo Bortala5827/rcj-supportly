@@ -156,4 +156,31 @@ export class ConversationRepository {
       .bind(now, now, conversationId)
       .run();
   }
+
+  async delete(conversationId: string): Promise<void> {
+    await this.db
+      .prepare("DELETE FROM conversations WHERE id = ?")
+      .bind(conversationId)
+      .run();
+  }
+
+  async deleteOldResolved(days: number): Promise<number> {
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const result = await this.db
+      .prepare("DELETE FROM conversations WHERE status = 'resolved' AND resolved_at < ?")
+      .bind(cutoff)
+      .run();
+    return result.meta.changes ?? 0;
+  }
+
+  async countAll(): Promise<{ total: number; open: number; resolved: number }> {
+    const totalResult = await this.db.prepare("SELECT COUNT(*) as count FROM conversations").first<{ count: number }>();
+    const openResult = await this.db.prepare("SELECT COUNT(*) as count FROM conversations WHERE status = 'open'").first<{ count: number }>();
+    const resolvedResult = await this.db.prepare("SELECT COUNT(*) as count FROM conversations WHERE status = 'resolved'").first<{ count: number }>();
+    return {
+      total: totalResult?.count ?? 0,
+      open: openResult?.count ?? 0,
+      resolved: resolvedResult?.count ?? 0,
+    };
+  }
 }

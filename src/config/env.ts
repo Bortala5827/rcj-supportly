@@ -86,6 +86,11 @@ export type Env = {
   JWT_SECRET?: string;
   WIDGET_TOKEN_SECRET?: string;
   DEFAULT_AI_MODEL?: string;
+  // 邮件通知配置
+  RESEND_API_KEY?: string;
+  EMAIL_FROM?: string;
+  EMAIL_NOTIFY_TO?: string;
+  EMAIL_NOTIFICATION_ENABLED?: string;
 };
 
 export type AppContext = {

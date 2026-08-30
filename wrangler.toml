@@ -22,3 +22,9 @@ new_sqlite_classes = ["VisitorStream", "AdminStream"]
 [vars]
 JWT_SECRET = "rcj-supportly-jwt-secret-2026-change-me"
 WIDGET_TOKEN_SECRET = "rcj-supportly-widget-secret-2026-change-me"
+# 邮件通知配置（使用 Resend 免费 API，每天100封）
+# 注册地址：https://resend.com
+EMAIL_NOTIFICATION_ENABLED = "false"
+# RESEND_API_KEY = "re_xxxxxxxxxxxxxxxx"
+# EMAIL_FROM = "onboarding@resend.dev"
+# EMAIL_NOTIFY_TO = "your-email@qq.com"

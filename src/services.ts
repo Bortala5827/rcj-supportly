@@ -19,6 +19,7 @@ import { RealtimeService } from "./modules/realtime/realtime.service";
 import { AdminUserRepository } from "./modules/users/admin-user.repository";
 import { AuthService } from "./modules/users/auth.service";
 import { WidgetService } from "./modules/widget/widget.service";
+import { EmailService } from "./modules/notifications/email.service";
 
 export function createServices(env: Env) {
   const adapters = new AdapterRegistry([new CustomWebhookAdapter(), new TelegramAdapter(), new WebChatAdapter()]);
@@ -79,6 +80,14 @@ export function createServices(env: Env) {
     env.WIDGET_TOKEN_SECRET ?? env.JWT_SECRET ?? "supportly-dev-secret-change-before-deploy"
   );
 
+  // 邮件通知服务
+  const emailService = new EmailService({
+    apiKey: env.RESEND_API_KEY || "",
+    from: env.EMAIL_FROM || "onboarding@resend.dev",
+    to: env.EMAIL_NOTIFY_TO || "",
+    enabled: env.EMAIL_NOTIFICATION_ENABLED === "true",
+  });
+
   return {
     adapters,
     channels: channelService,
@@ -89,5 +98,6 @@ export function createServices(env: Env) {
     knowledge: knowledgeService,
     auth: authService,
     widget: widgetService,
+    email: emailService,
   };
 }
