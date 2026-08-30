@@ -16,6 +16,7 @@ export function errorMiddleware(): MiddlewareHandler<AppContext> {
 
 export function errorResponse(error: unknown, c: Context<AppContext>) {
   const requestId = c.get("requestId");
+  const debug = c.req.query("debug") === "1" || c.req.header("x-debug-response") === "true";
 
   if (isAppError(error)) {
     logger.warn("app_error", { requestId, code: error.code, message: error.message });
@@ -30,9 +31,24 @@ export function errorResponse(error: unknown, c: Context<AppContext>) {
     );
   }
 
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorStack = error instanceof Error ? error.stack : undefined;
   logger.error("unhandled_error", {
     requestId,
-    message: error instanceof Error ? error.message : String(error),
+    message: errorMessage,
+    stack: errorStack,
   });
+  
+  if (debug) {
+    return c.json({ 
+      error: { 
+        code: "INTERNAL_ERROR", 
+        message: errorMessage,
+        stack: errorStack,
+        requestId 
+      } 
+    }, 500);
+  }
+  
   return c.json({ error: { code: "INTERNAL_ERROR", message: "Internal server error" } }, 500);
 }

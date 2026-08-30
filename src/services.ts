@@ -33,10 +33,16 @@ export function createServices(env: Env) {
 
   // Mock AI services when bindings are not available
   const mockAiSearchGateway = {
+    instanceName: kbInstanceName,
     upsert: async () => {},
     delete: async () => {},
-    search: async () => [],
+    search: async () => ({ chunks: [] }),
     listNamespaces: async () => [],
+    searchKnowledge: async () => [],
+    uploadDocument: async () => ({ id: "", key: "", status: "completed" }),
+    uploadDocumentAndPoll: async () => ({ id: "", key: "", status: "completed" }),
+    deleteDocument: async () => {},
+    listDocuments: async () => [],
   };
   const mockWorkersAiGateway = {
     run: async () => ({ response: "" }),

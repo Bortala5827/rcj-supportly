@@ -8,6 +8,7 @@ export const webhookRoutes = new Hono<AppContext>();
 
 webhookRoutes.post("/:channelAccountId", async (c) => {
   const debugResponse = c.req.query("debug") === "1" || c.req.header("x-debug-response") === "true";
+  try {
   const services = createServices(c.env);
   const account = await services.channels.getAccount(c.req.param("channelAccountId"));
   const adapter = services.channels.getAdapter(account);
@@ -100,4 +101,23 @@ webhookRoutes.post("/:channelAccountId", async (c) => {
   };
 
   return ok(debugResponse ? { ...summary, results: debugResults } : summary);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    logger.error("webhook_error", { 
+      channelAccountId: c.req.param("channelAccountId"),
+      message: errorMessage,
+      stack: errorStack,
+    });
+    if (debugResponse) {
+      return c.json({ 
+        error: { 
+          code: "WEBHOOK_ERROR", 
+          message: errorMessage,
+          stack: errorStack,
+        } 
+      }, 500);
+    }
+    return c.json({ error: { code: "WEBHOOK_ERROR", message: "Webhook processing failed" } }, 500);
+  }
 });
