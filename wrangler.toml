@@ -20,8 +20,11 @@ tag = "v1_realtime_streams"
 new_sqlite_classes = ["VisitorStream", "AdminStream"]
 
 [vars]
-JWT_SECRET = "rcj-supportly-jwt-secret-2026-change-me"
-WIDGET_TOKEN_SECRET = "rcj-supportly-widget-secret-2026-change-me"
+# 以下两项为敏感信息，已通过 `wrangler secret put` 设置（绝不明文写在代码中）：
+#   JWT_SECRET          —— 签发/校验管理员与客服 JWT
+#   WIDGET_TOKEN_SECRET —— 校验客服挂件(widget)请求令牌
+# 修改/重置命令：wrangler secret put JWT_SECRET / wrangler secret put WIDGET_TOKEN_SECRET
+
 # 邮件通知配置（使用 Resend 免费 API，每天100封）
 # 注册地址：https://resend.com
 # 注意：RESEND_API_KEY 为敏感信息，请使用 `wrangler secret put RESEND_API_KEY` 设置
