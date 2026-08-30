@@ -1,0 +1,87 @@
+import { AdapterRegistry } from "./adapters/channel-adapter";
+import { CustomWebhookAdapter } from "./adapters/custom-webhook.adapter";
+import { TelegramAdapter } from "./adapters/telegram.adapter";
+import { WebChatAdapter } from "./adapters/web-chat.adapter";
+import type { Env } from "./config/env";
+import { AiSearchGateway } from "./gateways/ai-search.gateway";
+import { WorkersAiGateway } from "./gateways/workers-ai.gateway";
+import { AiService } from "./modules/ai/ai.service";
+import { ChannelRepository } from "./modules/channels/channel.repository";
+import { ChannelService } from "./modules/channels/channel.service";
+import { ConversationRepository } from "./modules/conversations/conversation.repository";
+import { ConversationService } from "./modules/conversations/conversation.service";
+import { KnowledgeRepository } from "./modules/knowledge/knowledge.repository";
+import { KnowledgeService } from "./modules/knowledge/knowledge.service";
+import { MediaService } from "./modules/media/media.service";
+import { MessageRepository } from "./modules/messages/message.repository";
+import { MessageService } from "./modules/messages/message.service";
+import { RealtimeService } from "./modules/realtime/realtime.service";
+import { AdminUserRepository } from "./modules/users/admin-user.repository";
+import { AuthService } from "./modules/users/auth.service";
+import { WidgetService } from "./modules/widget/widget.service";
+
+export function createServices(env: Env) {
+  const adapters = new AdapterRegistry([new CustomWebhookAdapter(), new TelegramAdapter(), new WebChatAdapter()]);
+
+  const channelRepository = new ChannelRepository(env.DB);
+  const conversationRepository = new ConversationRepository(env.DB);
+  const messageRepository = new MessageRepository(env.DB);
+  const knowledgeRepository = new KnowledgeRepository(env.DB);
+  const adminUserRepository = new AdminUserRepository(env.DB);
+
+  const kbInstanceName = env.KB_INSTANCE_NAME ?? "supportly-dev";
+
+  // Mock AI services when bindings are not available
+  const mockAiSearchGateway = {
+    upsert: async () => {},
+    delete: async () => {},
+    search: async () => [],
+    listNamespaces: async () => [],
+  };
+  const mockWorkersAiGateway = {
+    run: async () => ({ response: "" }),
+  };
+  const aiSearchGateway = env.AI_SEARCH ? new AiSearchGateway(env.AI_SEARCH.get(kbInstanceName), kbInstanceName) : mockAiSearchGateway;
+  const workersAiGateway = env.AI ? new WorkersAiGateway(env.AI, env) : mockWorkersAiGateway;
+
+  const aiService = new AiService(aiSearchGateway, workersAiGateway, messageRepository);
+  const channelService = new ChannelService(channelRepository, adapters);
+  const conversationService = new ConversationService(conversationRepository, messageRepository, aiService);
+  const realtimeService = new RealtimeService(env);
+  // Mock media service when R2 bucket is not available
+  const mockMediaService = {
+    storeUpload: async () => { throw new Error("Media upload not available"); },
+    getMessageAttachmentResponse: async () => new Response("Not found", { status: 404 }),
+  };
+  const mediaService = env.MEDIA_BUCKET ? new MediaService(env.MEDIA_BUCKET, messageRepository) : mockMediaService;
+  const messageService = new MessageService(
+    channelService,
+    conversationRepository,
+    messageRepository,
+    realtimeService,
+    mediaService
+  );
+  const knowledgeService = new KnowledgeService(knowledgeRepository, aiSearchGateway);
+  const authService = new AuthService(adminUserRepository, env.JWT_SECRET ?? "supportly-dev-secret-change-before-deploy");
+  const widgetService = new WidgetService(
+    channelService,
+    conversationRepository,
+    messageRepository,
+    conversationService,
+    realtimeService,
+    mediaService,
+    env.WIDGET_TOKEN_SECRET ?? env.JWT_SECRET ?? "supportly-dev-secret-change-before-deploy"
+  );
+
+  return {
+    adapters,
+    channels: channelService,
+    conversations: conversationService,
+    messages: messageService,
+    media: mediaService,
+    realtime: realtimeService,
+    knowledge: knowledgeService,
+    auth: authService,
+    widget: widgetService,
+  };
+}

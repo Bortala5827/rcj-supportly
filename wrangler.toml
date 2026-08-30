@@ -1,0 +1,24 @@
+name = "supportly-server-api"
+main = "src/index.ts"
+compatibility_date = "2026-03-27"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "supportly"
+database_id = "de9ab221-a534-4d7a-802d-45d7c5efae61"
+
+[[durable_objects.bindings]]
+name = "VISITOR_STREAM"
+class_name = "VisitorStream"
+
+[[durable_objects.bindings]]
+name = "ADMIN_STREAM"
+class_name = "AdminStream"
+
+[[migrations]]
+tag = "v1_realtime_streams"
+new_sqlite_classes = ["VisitorStream", "AdminStream"]
+
+[vars]
+JWT_SECRET = "rcj-supportly-jwt-secret-2026-change-me"
+WIDGET_TOKEN_SECRET = "rcj-supportly-widget-secret-2026-change-me"
