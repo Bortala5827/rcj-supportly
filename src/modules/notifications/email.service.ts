@@ -99,14 +99,13 @@ export class EmailService {
       <div style="background: #f9fafb; padding: 16px; border-radius: 8px; border-left: 3px solid #0d9488; margin-bottom: 20px;">
         <p style="margin: 0; color: #111827; font-size: 14px; line-height: 1.6;">${input.messageContent}</p>
       </div>
-      <div style="margin-bottom: 16px;">
-        <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px;">点击下方链接立即回复：</p>
-        <a href="https://955827.xyz/admin?conversation=${input.conversationId}" style="color: #0d9488; font-size: 13px; text-decoration: underline; word-break: break-all;">
-          https://955827.xyz/admin?conversation=${input.conversationId}
+      <div style="margin-bottom: 16px; text-align: center;">
+        <a href="https://955827.xyz/admin?conversation=${input.conversationId}" style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #0d9488, #14b8a6); color: #ffffff; text-decoration: none; border-radius: 10px; font-size: 16px; font-weight: 700; letter-spacing: 1px;">
+          马上回复
         </a>
       </div>
       <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
-        会话 ID: ${input.conversationId}
+        会话 ID: ${input.conversationId} · 点击按钮自动打开后台并定位到该会话
       </p>
     </div>
   </div>
