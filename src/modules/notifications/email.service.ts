@@ -101,8 +101,8 @@ export class EmailService {
       </div>
       <div style="margin-bottom: 16px;">
         <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px;">点击下方链接立即回复：</p>
-        <a href="https://exam.955827.xyz/admin?conversation=${input.conversationId}" style="color: #0d9488; font-size: 13px; text-decoration: underline; word-break: break-all;">
-          https://exam.955827.xyz/admin?conversation=${input.conversationId}
+        <a href="https://955827.xyz/admin?conversation=${input.conversationId}" style="color: #0d9488; font-size: 13px; text-decoration: underline; word-break: break-all;">
+          https://955827.xyz/admin?conversation=${input.conversationId}
         </a>
       </div>
       <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">

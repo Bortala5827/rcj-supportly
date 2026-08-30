@@ -60,7 +60,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  API 地址: https://support.955827.xyz" -ForegroundColor White
 Write-Host "  健康检查: https://support.955827.xyz/health" -ForegroundColor White
-Write-Host "  管理后台: https://exam.955827.xyz/admin.html" -ForegroundColor White
+Write-Host "  管理后台: https://955827.xyz/admin" -ForegroundColor White
 Write-Host ""
 Write-Host "  默认账号: admin@example.com / admin123" -ForegroundColor Yellow
 Write-Host "  ⚠️  请尽快修改默认密码！" -ForegroundColor Red

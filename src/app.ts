@@ -58,7 +58,7 @@ app.get("/", (c) => {
   <div class="card">
     <h1>💬 RCJ 客服系统</h1>
     <p>多渠道智能客服平台</p>
-    <a href="https://exam.955827.xyz/admin.html" class="btn">进入管理后台</a>
+    <a href="https://955827.xyz/admin" class="btn">进入管理后台</a>
     <div class="status">API 服务正常运行中</div>
   </div>
 </body>
