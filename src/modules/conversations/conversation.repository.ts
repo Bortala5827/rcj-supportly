@@ -157,6 +157,13 @@ export class ConversationRepository {
       .run();
   }
 
+  async updateLastNotifiedAt(conversationId: string, notifiedAt: string): Promise<void> {
+    await this.db
+      .prepare("UPDATE conversations SET last_notified_at = ?, updated_at = ? WHERE id = ?")
+      .bind(notifiedAt, nowIso(), conversationId)
+      .run();
+  }
+
   async delete(conversationId: string): Promise<void> {
     await this.db
       .prepare("DELETE FROM conversations WHERE id = ?")

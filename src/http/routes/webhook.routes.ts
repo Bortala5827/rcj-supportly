@@ -38,19 +38,29 @@ webhookRoutes.post("/:channelAccountId", async (c) => {
       duplicates += 1;
     } else {
       accepted += 1;
-      // 发送邮件通知（异步，不阻塞响应）
-      services.email.sendNewMessageNotification({
-        contactName: inbound.contactName || "匿名访客",
-        channel: account.channelType === "telegram" ? "Telegram" : account.channelType === "web_chat" ? "网页" : account.channelType,
-        messageContent: inbound.content || "(空消息)",
-        conversationId: result.conversationId,
-      }).catch((e) => {
-        logger.warn("email_notification_failed", {
-          requestId: c.get("requestId"),
-          conversationId: result.conversationId,
-          error: e instanceof Error ? e.message : String(e),
-        });
-      });
+      // 邮件通知节流：5分钟内同一个会话只发一次通知
+      (async () => {
+        try {
+          const shouldNotify = await services.conversations.shouldNotify(result.conversationId, 5);
+          if (!shouldNotify) return;
+          
+          await services.email.sendNewMessageNotification({
+            contactName: inbound.contactName || "匿名访客",
+            channel: account.channelType === "telegram" ? "Telegram" : account.channelType === "web_chat" ? "网页" : account.channelType,
+            messageContent: inbound.content || "(空消息)",
+            conversationId: result.conversationId,
+          });
+          
+          // 标记已发送通知
+          await services.conversations.markNotified(result.conversationId);
+        } catch (e) {
+          logger.warn("email_notification_failed", {
+            requestId: c.get("requestId"),
+            conversationId: result.conversationId,
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
+      })();
     }
 
     if (result.aiMessage) {

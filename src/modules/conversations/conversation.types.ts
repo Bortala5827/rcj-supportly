@@ -18,6 +18,7 @@ export type Conversation = {
   createdAt: string;
   updatedAt: string;
   resolvedAt: string | null;
+  lastNotifiedAt: string | null;
 };
 
 export type ConversationRow = {
@@ -37,6 +38,7 @@ export type ConversationRow = {
   created_at: string;
   updated_at: string;
   resolved_at: string | null;
+  last_notified_at: string | null;
 };
 
 export type CreateConversationInput = {
@@ -66,5 +68,6 @@ export function mapConversation(row: ConversationRow): Conversation {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     resolvedAt: row.resolved_at,
+    lastNotifiedAt: row.last_notified_at,
   };
 }

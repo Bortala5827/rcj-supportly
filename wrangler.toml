@@ -24,7 +24,8 @@ JWT_SECRET = "rcj-supportly-jwt-secret-2026-change-me"
 WIDGET_TOKEN_SECRET = "rcj-supportly-widget-secret-2026-change-me"
 # 邮件通知配置（使用 Resend 免费 API，每天100封）
 # 注册地址：https://resend.com
-EMAIL_NOTIFICATION_ENABLED = "false"
-# RESEND_API_KEY = "re_xxxxxxxxxxxxxxxx"
-# EMAIL_FROM = "onboarding@resend.dev"
+# 注意：RESEND_API_KEY 为敏感信息，请使用 `wrangler secret put RESEND_API_KEY` 设置
+EMAIL_NOTIFICATION_ENABLED = "true"
+# RESEND_API_KEY 通过 wrangler secret put 设置，不写在代码中
+EMAIL_FROM = "RCJ 客服 <noreply@955827.xyz>"
 EMAIL_NOTIFY_TO = "1430115702@qq.com"

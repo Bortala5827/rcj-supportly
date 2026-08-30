@@ -16,6 +16,7 @@ import type { MediaService } from "../media/media.service";
 import type { MessageRepository } from "../messages/message.repository";
 import type { Message } from "../messages/message.types";
 import type { RealtimeService } from "../realtime/realtime.service";
+import type { EmailService } from "../notifications/email.service";
 import type { VisitorTokenClaims } from "./widget.types";
 import { toWidgetMessage } from "./widget.types";
 
@@ -29,7 +30,8 @@ export class WidgetService {
     private readonly conversationService: ConversationService,
     private readonly realtime: RealtimeService,
     private readonly media: MediaService,
-    private readonly tokenSecret: string
+    private readonly tokenSecret: string,
+    private readonly emailService?: EmailService
   ) {}
 
   async createConversation(input: {
@@ -180,12 +182,42 @@ export class WidgetService {
       await this.notifyVisitorMessageResult(result);
     }
 
+    // 发送邮件通知（异步，不阻塞响应）
+    if (!result.duplicate && this.emailService) {
+      this.sendEmailNotification(result.conversationId, input.content, account.displayName || "网页").catch((e) => {
+        logger.warn("widget_email_notification_failed", {
+          conversationId: result.conversationId,
+          error: e instanceof Error ? e.message : String(e),
+        });
+      });
+    }
+
     return {
       conversationId: result.conversationId,
       inboundMessage: toWidgetMessage(result.inboundMessage),
       aiMessage: result.aiMessage ? toWidgetMessage({ ...result.aiMessage, status: "sent" }) : null,
       duplicate: result.duplicate,
     };
+  }
+
+  // 邮件通知节流：5分钟内同一个会话只发一次通知
+  private async sendEmailNotification(conversationId: string, messageContent: string, channel: string): Promise<void> {
+    if (!this.emailService) return;
+    
+    const shouldNotify = await this.conversationService.shouldNotify(conversationId, 5);
+    if (!shouldNotify) return;
+    
+    const conversation = await this.conversations.findById(conversationId);
+    const contactName = conversation?.contactName || "匿名访客";
+    
+    await this.emailService.sendNewMessageNotification({
+      contactName,
+      channel,
+      messageContent,
+      conversationId,
+    });
+    
+    await this.conversationService.markNotified(conversationId);
   }
 
   async completeVisitorMessage(input: { conversationId: string; inboundMessageId: string }): Promise<void> {

@@ -129,6 +129,23 @@ export class ConversationService {
     return this.getConversation(id);
   }
 
+  // 邮件通知节流：5分钟内同一个会话只发一次通知
+  async shouldNotify(conversationId: string, throttleMinutes: number = 5): Promise<boolean> {
+    const conversation = await this.getConversation(conversationId);
+    if (!conversation.lastNotifiedAt) return true;
+    
+    const lastNotifyTime = new Date(conversation.lastNotifiedAt).getTime();
+    const currentTime = Date.now();
+    const elapsedMinutes = (currentTime - lastNotifyTime) / (1000 * 60);
+    
+    return elapsedMinutes >= throttleMinutes;
+  }
+
+  async markNotified(conversationId: string): Promise<void> {
+    const now = new Date().toISOString();
+    await this.conversations.updateLastNotifiedAt(conversationId, now);
+  }
+
   async deleteConversation(id: string): Promise<void> {
     await this.getConversation(id);
     // 先删除相关消息

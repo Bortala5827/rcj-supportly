@@ -70,16 +70,6 @@ export function createServices(env: Env) {
   );
   const knowledgeService = new KnowledgeService(knowledgeRepository, aiSearchGateway);
   const authService = new AuthService(adminUserRepository, env.JWT_SECRET ?? "supportly-dev-secret-change-before-deploy");
-  const widgetService = new WidgetService(
-    channelService,
-    conversationRepository,
-    messageRepository,
-    conversationService,
-    realtimeService,
-    mediaService,
-    env.WIDGET_TOKEN_SECRET ?? env.JWT_SECRET ?? "supportly-dev-secret-change-before-deploy"
-  );
-
   // 邮件通知服务
   const emailService = new EmailService({
     apiKey: env.RESEND_API_KEY || "",
@@ -87,6 +77,17 @@ export function createServices(env: Env) {
     to: env.EMAIL_NOTIFY_TO || "",
     enabled: env.EMAIL_NOTIFICATION_ENABLED === "true",
   });
+
+  const widgetService = new WidgetService(
+    channelService,
+    conversationRepository,
+    messageRepository,
+    conversationService,
+    realtimeService,
+    mediaService,
+    env.WIDGET_TOKEN_SECRET ?? env.JWT_SECRET ?? "supportly-dev-secret-change-before-deploy",
+    emailService
+  );
 
   return {
     adapters,
