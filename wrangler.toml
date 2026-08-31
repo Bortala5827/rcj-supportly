@@ -36,3 +36,7 @@ EMAIL_NOTIFICATION_ENABLED = "true"
 # RESEND_API_KEY 通过 wrangler secret put 设置，不写在代码中
 EMAIL_FROM = "RCJ 客服 <noreply@955827.xyz>"
 EMAIL_NOTIFY_TO = "1430115702@qq.com"
+
+# 定时任务：每天 0 点（UTC）清理 7 天以上未更新的匿名访客会话
+[triggers]
+crons = ["0 0 * * *"]

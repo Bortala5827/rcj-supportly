@@ -180,6 +180,22 @@ export class ConversationRepository {
     return result.meta.changes ?? 0;
   }
 
+  // 删除匿名访客会话（含其子消息）。无论是否已解决，只要是匿名且超过 days 天未更新就清理。
+  async deleteAnonymousOlderThan(days: number): Promise<number> {
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    await this.db
+      .prepare(
+        "DELETE FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE is_anonymous = 1 AND updated_at < ?)"
+      )
+      .bind(cutoff)
+      .run();
+    const result = await this.db
+      .prepare("DELETE FROM conversations WHERE is_anonymous = 1 AND updated_at < ?")
+      .bind(cutoff)
+      .run();
+    return result.meta.changes ?? 0;
+  }
+
   async countAll(): Promise<{ total: number; open: number; resolved: number }> {
     const totalResult = await this.db.prepare("SELECT COUNT(*) as count FROM conversations").first<{ count: number }>();
     const openResult = await this.db.prepare("SELECT COUNT(*) as count FROM conversations WHERE status = 'open'").first<{ count: number }>();

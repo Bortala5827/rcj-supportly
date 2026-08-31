@@ -48,6 +48,10 @@
     .chat-input button:disabled { background: #9ca3af; cursor: not-allowed; }
     .empty { flex: 1; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px; }
     .refresh-btn { background: none; border: none; color: white; cursor: pointer; font-size: 18px; padding: 0 8px; }
+    .conv-item { position: relative; }
+    .conv-del { position: absolute; top: 10px; right: 12px; font-size: 11px; color: #ef4444; background: none; border: 1px solid #fecaca; border-radius: 6px; padding: 2px 8px; cursor: pointer; opacity: 0; transition: opacity .15s; }
+    .conv-item:hover .conv-del { opacity: 1; }
+    .conv-del:hover { background: #fef2f2; }
   </style>
 </head>
 <body>
@@ -67,6 +71,7 @@
       <div style="display:flex;align-items:center;gap:12px;">
         <a href="https://955827.xyz/admin" target="_blank" rel="noopener" style="color:rgba(255,255,255,.85);font-size:13px;text-decoration:none;">↗ 统一后台</a>
         <button class="refresh-btn" onclick="loadConversations()" title="刷新">🔄</button>
+        <button onclick="cleanupAnonymous()" title="清空 7 天以上未更新的匿名访客会话">清空匿名访客</button>
         <button onclick="doLogout()">退出</button>
       </div>
     </div>
@@ -138,6 +143,11 @@
               '<div class="conv-preview">' + (conv.lastMessage || '暂无消息') + '</div>' +
               '<div class="conv-time">' + formatTime(conv.updatedAt || conv.createdAt) + '</div>';
             div.onclick = function() { selectConversation(conv.id); };
+            var del = document.createElement('button');
+            del.textContent = '删除';
+            del.className = 'conv-del';
+            del.onclick = function(e) { e.stopPropagation(); deleteConv(conv.id); };
+            div.appendChild(del);
             sidebar.appendChild(div);
           });
         }).catch(function(e) { console.error('加载会话失败', e); });
@@ -155,7 +165,7 @@
         .then(function(r) { return r.json(); })
         .then(function(d) {
           var chat = document.getElementById('chat');
-          chat.innerHTML = '<div class="chat-header"><h2>会话详情</h2><div class="chat-actions"><button onclick="resolveConv()">标记已解决</button></div></div>' +
+          chat.innerHTML = '<div class="chat-header"><h2>会话详情</h2><div class="chat-actions"><button onclick="resolveConv()">标记已解决</button><button onclick="deleteConv(\'' + id + '\')">删除</button></div></div>' +
             '<div class="messages" id="messages"></div>' +
             '<div class="chat-input"><input type="text" id="msgInput" placeholder="输入回复..." maxlength="2000"><button onclick="sendMessage()">发送</button></div>';
           var messagesEl = document.getElementById('messages');
@@ -207,6 +217,34 @@
     function startPolling() {
       stopPolling();
       pollTimer = setInterval(function() { if (currentConv) loadMessages(currentConv); loadConversations(); }, 5000);
+    }
+
+    function deleteConv(id) {
+      if (!confirm('确定删除该会话及其消息？此操作不可恢复。')) return;
+      fetch(API + '/api/conversations/' + id, { method: 'DELETE', headers: authHeaders() })
+        .then(function(r) { return r.json(); })
+        .then(function() {
+          if (currentConv === id) {
+            currentConv = null;
+            document.getElementById('chat').innerHTML = '<div class="empty">选择一个会话开始聊天</div>';
+            stopPolling();
+          }
+          loadConversations();
+        })
+        .catch(function(e) { alert('删除失败：' + e.message); });
+    }
+
+    function cleanupAnonymous() {
+      if (!confirm('清空 7 天以上未更新的匿名访客会话？')) return;
+      fetch(API + '/api/conversations/cleanup-anonymous', {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify({ days: 7 })
+      }).then(function(r) { return r.json(); })
+        .then(function(d) {
+          var n = d.data && d.data.deletedConversations != null ? d.data.deletedConversations : 0;
+          alert('已清理匿名访客会话：' + n + ' 条');
+          loadConversations();
+        })
+        .catch(function(e) { alert('清理失败：' + e.message); });
     }
 
     function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }

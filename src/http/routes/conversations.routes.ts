@@ -109,6 +109,15 @@ conversationsRoutes.post("/cleanup", async (c) => {
   return ok(result);
 });
 
+// 清理匿名访客会话（默认删除 7 天以上未更新的匿名会话）
+conversationsRoutes.post("/cleanup-anonymous", async (c) => {
+  const services = createServices(c.env);
+  const body = await c.req.json().catch(() => ({}));
+  const days = typeof body.days === "number" ? body.days : 7;
+  const result = await services.conversations.deleteAnonymousConversations(days);
+  return ok(result);
+});
+
 conversationsRoutes.get("/stats/summary", async (c) => {
   const services = createServices(c.env);
   return ok(await services.conversations.getStats());

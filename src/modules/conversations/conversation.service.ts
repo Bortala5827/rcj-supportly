@@ -162,6 +162,12 @@ export class ConversationService {
     return { deletedConversations, deletedMessages };
   }
 
+  // 清理匿名访客会话：删除 is_anonymous=1 且超过 days 天未更新的会话（含子消息）
+  async deleteAnonymousConversations(days: number = 7): Promise<{ deletedConversations: number }> {
+    const deletedConversations = await this.conversations.deleteAnonymousOlderThan(days);
+    return { deletedConversations };
+  }
+
   async getStats(): Promise<{ total: number; open: number; resolved: number }> {
     return this.conversations.countAll();
   }
