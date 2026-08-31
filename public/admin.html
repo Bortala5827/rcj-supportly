@@ -223,7 +223,8 @@
       if (!confirm('确定删除该会话及其消息？此操作不可恢复。')) return;
       fetch(API + '/api/conversations/' + id, { method: 'DELETE', headers: authHeaders() })
         .then(function(r) { return r.json(); })
-        .then(function() {
+        .then(function(d) {
+          if (d && d.error) { alert('删除失败：' + (d.error.message || d.error.code || '未知错误')); return; }
           if (currentConv === id) {
             currentConv = null;
             document.getElementById('chat').innerHTML = '<div class="empty">选择一个会话开始聊天</div>';
@@ -240,6 +241,7 @@
         method: 'POST', headers: authHeaders(), body: JSON.stringify({ days: 7 })
       }).then(function(r) { return r.json(); })
         .then(function(d) {
+          if (d && d.error) { alert('清理失败：' + (d.error.message || d.error.code || '未知错误')); return; }
           var n = d.data && d.data.deletedConversations != null ? d.data.deletedConversations : 0;
           alert('已清理匿名访客会话：' + n + ' 条');
           loadConversations();
