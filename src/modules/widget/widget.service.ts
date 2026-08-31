@@ -17,6 +17,7 @@ import type { MessageRepository } from "../messages/message.repository";
 import type { Message } from "../messages/message.types";
 import type { RealtimeService } from "../realtime/realtime.service";
 import type { EmailService } from "../notifications/email.service";
+import type { TelegramService } from "../notifications/telegram.service";
 import type { VisitorTokenClaims } from "./widget.types";
 import { toWidgetMessage } from "./widget.types";
 
@@ -31,7 +32,8 @@ export class WidgetService {
     private readonly realtime: RealtimeService,
     private readonly media: MediaService,
     private readonly tokenSecret: string,
-    private readonly emailService?: EmailService
+    private readonly emailService?: EmailService,
+    private readonly telegramService?: TelegramService
   ) {}
 
   async createConversation(input: {
@@ -182,10 +184,10 @@ export class WidgetService {
       await this.notifyVisitorMessageResult(result);
     }
 
-    // 发送邮件通知（异步，不阻塞响应）
-    if (!result.duplicate && this.emailService) {
-      this.sendEmailNotification(result.conversationId, input.content, account.displayName || "网页").catch((e) => {
-        logger.warn("widget_email_notification_failed", {
+    // 发送邮件 + Telegram 通知（异步，不阻塞响应）
+    if (!result.duplicate && (this.emailService || this.telegramService)) {
+      this.sendOwnerNotification(result.conversationId, input.content, account.displayName || "网页").catch((e) => {
+        logger.warn("widget_owner_notification_failed", {
           conversationId: result.conversationId,
           error: e instanceof Error ? e.message : String(e),
         });
@@ -200,23 +202,37 @@ export class WidgetService {
     };
   }
 
-  // 邮件通知节流：5分钟内同一个会话只发一次通知
-  private async sendEmailNotification(conversationId: string, messageContent: string, channel: string): Promise<void> {
-    if (!this.emailService) return;
-    
+  // 站长通知（邮件 + Telegram）节流：5分钟内同一个会话只发一次通知
+  private async sendOwnerNotification(conversationId: string, messageContent: string, channel: string): Promise<void> {
+    if (!this.emailService && !this.telegramService) return;
+
     const shouldNotify = await this.conversationService.shouldNotify(conversationId, 5);
     if (!shouldNotify) return;
-    
+
     const conversation = await this.conversations.findById(conversationId);
     const contactName = conversation?.contactName || "匿名访客";
-    
-    await this.emailService.sendNewMessageNotification({
+
+    const email = this.emailService ? await this.emailService.sendNewMessageNotification({
       contactName,
       channel,
       messageContent,
       conversationId,
-    });
-    
+    }) : { success: false, error: "email service not configured" };
+
+    const telegram = this.telegramService ? await this.telegramService.sendNewMessageNotification({
+      contactName,
+      channel,
+      messageContent,
+      conversationId,
+    }) : { success: false, error: "telegram service not configured" };
+
+    if (!email.success) {
+      logger.warn("widget_email_notification_failed", { conversationId, error: email.error });
+    }
+    if (!telegram.success) {
+      logger.warn("widget_telegram_notification_failed", { conversationId, error: telegram.error });
+    }
+
     await this.conversationService.markNotified(conversationId);
   }
 

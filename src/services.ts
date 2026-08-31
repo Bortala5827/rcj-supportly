@@ -20,6 +20,7 @@ import { AdminUserRepository } from "./modules/users/admin-user.repository";
 import { AuthService } from "./modules/users/auth.service";
 import { WidgetService } from "./modules/widget/widget.service";
 import { EmailService } from "./modules/notifications/email.service";
+import { TelegramService } from "./modules/notifications/telegram.service";
 
 export function createServices(env: Env) {
   const adapters = new AdapterRegistry([new CustomWebhookAdapter(), new TelegramAdapter(), new WebChatAdapter()]);
@@ -77,6 +78,12 @@ export function createServices(env: Env) {
     to: env.EMAIL_NOTIFY_TO || "",
     enabled: env.EMAIL_NOTIFICATION_ENABLED === "true",
   });
+  // Telegram 站长通知服务（缺密钥时优雅跳过）
+  const telegramService = new TelegramService({
+    botToken: env.TG_BOT_TOKEN || "",
+    chatId: env.TG_CHAT_ID || "",
+    enabled: env.TELEGRAM_NOTIFICATION_ENABLED !== "false" && Boolean(env.TG_BOT_TOKEN && env.TG_CHAT_ID),
+  });
 
   const widgetService = new WidgetService(
     channelService,
@@ -86,7 +93,8 @@ export function createServices(env: Env) {
     realtimeService,
     mediaService,
     env.WIDGET_TOKEN_SECRET ?? env.JWT_SECRET ?? "supportly-dev-secret-change-before-deploy",
-    emailService
+    emailService,
+    telegramService
   );
 
   return {
@@ -100,5 +108,6 @@ export function createServices(env: Env) {
     auth: authService,
     widget: widgetService,
     email: emailService,
+    telegram: telegramService,
   };
 }

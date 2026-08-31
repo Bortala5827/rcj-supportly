@@ -37,6 +37,10 @@ EMAIL_NOTIFICATION_ENABLED = "true"
 EMAIL_FROM = "RCJ 客服 <noreply@955827.xyz>"
 EMAIL_NOTIFY_TO = "1430115702@qq.com"
 
+# Telegram 站长通知配置（客户来消息时推送提醒）
+# TG_BOT_TOKEN / TG_CHAT_ID 为敏感信息，使用 `wrangler secret put TG_BOT_TOKEN` / `wrangler secret put TG_CHAT_ID` 设置
+TELEGRAM_NOTIFICATION_ENABLED = "true"
+
 # 定时任务：每天 0 点（UTC）清理 7 天以上未更新的匿名访客会话
 [triggers]
 crons = ["0 0 * * *"]

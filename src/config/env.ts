@@ -91,6 +91,10 @@ export type Env = {
   EMAIL_FROM?: string;
   EMAIL_NOTIFY_TO?: string;
   EMAIL_NOTIFICATION_ENABLED?: string;
+  // Telegram 站长通知配置（TG_BOT_TOKEN / TG_CHAT_ID 通过 wrangler secret put 设置）
+  TG_BOT_TOKEN?: string;
+  TG_CHAT_ID?: string;
+  TELEGRAM_NOTIFICATION_ENABLED?: string;
 };
 
 export type AppContext = {
