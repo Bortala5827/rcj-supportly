@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supportly · 轻量客服系统 | RCJ Lab</title>
+  <meta name="description" content="Supportly 是一款零月费的轻量客服系统：网页聊天 widget + Telegram 双通道，Cloudflare Workers + D1 驱动，分钟级部署，自带管理后台。" />
+  <meta name="theme-color" content="#0d9488" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d9488'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='system-ui' font-size='28' font-weight='800' fill='white'%3ES%3C/text%3E%3C/svg%3E" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f0fdfa;
+      color: #134e4a;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    header { text-align: center; margin-bottom: 36px; }
+    .logo {
+      width: 56px; height: 56px; border-radius: 14px; background: #0d9488;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 26px; font-weight: 800; margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(13,148,136,.25);
+    }
+    h1 { font-size: clamp(24px, 5vw, 34px); font-weight: 800; color: #134e4a; margin-bottom: 10px; letter-spacing: -0.02em; }
+    .tagline { font-size: 15px; color: #5eead4; color: #0f766e; max-width: 480px; margin: 0 auto; }
+    .badge-row { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+    .badge {
+      font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+      background: rgba(13,148,136,.1); color: #0d9488; border: 1px solid rgba(13,148,136,.2);
+    }
+    .card {
+      background: #fff; border: 1px solid #ccfbf1; border-radius: 16px;
+      padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(13,148,136,.06);
+    }
+    .card h2 { font-size: 16px; font-weight: 700; color: #134e4a; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .feature { padding: 14px; background: #f0fdfa; border-radius: 10px; border: 1px solid #ccfbf1; }
+    .feature .icon { font-size: 20px; margin-bottom: 6px; }
+    .feature .name { font-size: 13px; font-weight: 700; color: #134e4a; margin-bottom: 2px; }
+    .feature .desc { font-size: 12px; color: #0f766e; line-height: 1.5; }
+    .code-block {
+      background: #134e4a; color: #5eead4; border-radius: 10px;
+      padding: 14px 16px; font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 12.5px; line-height: 1.6; overflow-x: auto; word-break: break-all;
+    }
+    .code-block .comment { color: #5eead4; opacity: .6; }
+    .code-label { font-size: 11px; color: #0f766e; margin-bottom: 6px; font-weight: 600; }
+    .cta-row { display: flex; gap: 12px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 700;
+      text-decoration: none; transition: transform .15s, background .2s;
+    }
+    .btn-primary { background: #0d9488; color: #fff; box-shadow: 0 2px 8px rgba(13,148,136,.3); }
+    .btn-primary:hover { background: #0f766e; transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: #0d9488; border: 1.5px solid #0d9488; }
+    .btn-ghost:hover { background: rgba(13,148,136,.06); }
+    footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccfbf1; font-size: 12px; color: #0f766e; }
+    footer a { color: #0d9488; text-decoration: none; font-weight: 600; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">S</div>
+      <h1>Supportly</h1>
+      <p class="tagline">零月费轻量客服系统 · 网页聊天 + Telegram 双通道 · 分钟级部署 · 自带管理后台</p>
+      <div class="badge-row">
+        <span class="badge">Cloudflare Workers</span>
+        <span class="badge">D1 存储</span>
+        <span class="badge">开源</span>
+        <span class="badge">零月费</span>
+      </div>
+    </header>
+
+    <div class="card">
+      <h2>✨ 核心特性</h2>
+      <div class="features">
+        <div class="feature">
+          <div class="icon">💬</div>
+          <div class="name">网页聊天 Widget</div>
+          <div class="desc">一行 script 嵌入任意网站，访客直接发消息</div>
+        </div>
+        <div class="feature">
+          <div class="icon">🤖</div>
+          <div class="name">Telegram 通道</div>
+          <div class="desc">访客可直接给 Telegram 机器人发消息，运营者实时收到提醒</div>
+        </div>
+        <div class="feature">
+          <div class="icon">🗂️</div>
+          <div class="name">统一会话管理</div>
+          <div class="desc">后台查看所有会话，回复、分配、清理一站式完成</div>
+        </div>
+        <div class="feature">
+          <div class="icon">🔔</div>
+          <div class="name">新消息提醒</div>
+          <div class="desc">支持 Telegram 和邮件（Resend）双通道新消息通知</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📋 嵌入示例</h2>
+      <p class="code-label">在你的网站底部加入这一行即可：</p>
+      <div class="code-block"><span class="comment">&lt;!-- Supportly 客服 widget --&gt;</span>
+&lt;script src="https://support.955827.xyz/widget.js"
+        data-channel-id="你的频道ID"&gt;&lt;/script&gt;</div>
+    </div>
+
+    <div class="cta-row">
+      <a class="btn btn-primary" href="/admin.html">进入管理后台 →</a>
+      <a class="btn btn-ghost" href="https://955827.xyz" target="_blank" rel="noopener">RCJ 主站</a>
+    </div>
+
+    <footer>
+      <p>Supportly · 基于 Cloudflare Workers + D1 · 部分 <a href="https://github.com/Bortala5827" target="_blank" rel="noopener">开源</a></p>
+    </footer>
+  </div>
+</body>
+</html>
