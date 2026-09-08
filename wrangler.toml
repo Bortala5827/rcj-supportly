@@ -1,4 +1,6 @@
 name = "supportly-server-api"
+# 显式指定账户，避免 CI 里缺 CLOUDFLARE_ACCOUNT_ID 时 wrangler 打到错误账户或直接失败
+account_id = "725b9540433aa3356e5538662d7b9b32"
 main = "src/index.ts"
 compatibility_date = "2026-03-27"
 
