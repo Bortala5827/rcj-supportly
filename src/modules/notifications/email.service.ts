@@ -50,7 +50,7 @@ export class EmailService {
         }),
       });
 
-      const data = await response.json().catch(() => ({}));
+      const data = (await response.json().catch(() => ({}))) as { message?: string; id?: string };
       if (!response.ok) {
         return { success: false, error: data.message || `HTTP ${response.status}` };
       }

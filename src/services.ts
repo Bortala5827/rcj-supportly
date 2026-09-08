@@ -49,8 +49,10 @@ export function createServices(env: Env) {
   const mockWorkersAiGateway = {
     run: async () => ({ response: "" }),
   };
-  const aiSearchGateway = env.AI_SEARCH ? new AiSearchGateway(env.AI_SEARCH.get(kbInstanceName), kbInstanceName) : mockAiSearchGateway;
-  const workersAiGateway = env.AI ? new WorkersAiGateway(env.AI, env) : mockWorkersAiGateway;
+  const aiSearchGateway = (
+    env.AI_SEARCH ? new AiSearchGateway(env.AI_SEARCH.get(kbInstanceName), kbInstanceName) : mockAiSearchGateway
+  ) as unknown as AiSearchGateway;
+  const workersAiGateway = (env.AI ? new WorkersAiGateway(env.AI, env) : mockWorkersAiGateway) as unknown as WorkersAiGateway;
 
   const aiService = new AiService(aiSearchGateway, workersAiGateway, messageRepository);
   const channelService = new ChannelService(channelRepository, adapters);
@@ -61,7 +63,9 @@ export function createServices(env: Env) {
     storeUpload: async () => { throw new Error("Media upload not available"); },
     getMessageAttachmentResponse: async () => new Response("Not found", { status: 404 }),
   };
-  const mediaService = env.MEDIA_BUCKET ? new MediaService(env.MEDIA_BUCKET, messageRepository) : mockMediaService;
+  const mediaService = (
+    env.MEDIA_BUCKET ? new MediaService(env.MEDIA_BUCKET, messageRepository) : mockMediaService
+  ) as unknown as MediaService;
   const messageService = new MessageService(
     channelService,
     conversationRepository,
