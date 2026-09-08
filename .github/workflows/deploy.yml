@@ -1,6 +1,8 @@
 name: deploy
 
 on:
+  # 允许在 Actions 页面手动触发（排查凭证问题、重新部署时不用再造 commit）
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
