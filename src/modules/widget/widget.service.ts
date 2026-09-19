@@ -184,15 +184,8 @@ export class WidgetService {
       await this.notifyVisitorMessageResult(result);
     }
 
-    // 发送邮件 + Telegram 通知（异步，不阻塞响应）
-    if (!result.duplicate && (this.emailService || this.telegramService)) {
-      this.sendOwnerNotification(result.conversationId, input.content, account.displayName || "网页").catch((e) => {
-        logger.warn("widget_owner_notification_failed", {
-          conversationId: result.conversationId,
-          error: e instanceof Error ? e.message : String(e),
-        });
-      });
-    }
+    // 注意：站长通知不再在此处 fire-and-forget（游离 Promise 会被 Worker 在响应返回后冻结取消）。
+    // 统一由路由层用 c.executionCtx.waitUntil(services.widget.notifyOwnerForNewMessage(...)) 可靠触发。
 
     return {
       conversationId: result.conversationId,
@@ -226,14 +219,28 @@ export class WidgetService {
       conversationId,
     }) : { success: false, error: "telegram service not configured" };
 
-    if (!email.success) {
-      logger.warn("widget_email_notification_failed", { conversationId, error: email.error });
-    }
-    if (!telegram.success) {
-      logger.warn("widget_telegram_notification_failed", { conversationId, error: telegram.error });
+    if (!email.success || !telegram.success) {
+      const parts: string[] = [];
+      if (!email.success) parts.push("email:" + (email.error || "unknown"));
+      if (!telegram.success) parts.push("tg:" + (telegram.error || "unknown"));
+      const detail = parts.join(" | ");
+      logger.warn("widget_owner_notification_failed", { conversationId, error: detail });
+      await this.conversationService.recordNotifyError(conversationId, detail).catch(() => {});
+      return; // 不标记已通知，下次消息仍可重试
     }
 
     await this.conversationService.markNotified(conversationId);
+  }
+
+  // 公开方法：供路由层用 executionCtx.waitUntil 可靠触发站长通知（避免游离 Promise 被 Worker 取消）
+  async notifyOwnerForNewMessage(conversationId: string, messageContent: string, channel: string): Promise<void> {
+    try {
+      await this.sendOwnerNotification(conversationId, messageContent, channel);
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      logger.warn("widget_owner_notification_failed", { conversationId, error: detail });
+      await this.conversationService.recordNotifyError(conversationId, detail).catch(() => {});
+    }
   }
 
   async completeVisitorMessage(input: { conversationId: string; inboundMessageId: string }): Promise<void> {

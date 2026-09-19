@@ -39,18 +39,28 @@ webhookRoutes.post("/:channelAccountId", async (c) => {
     } else {
       accepted += 1;
       // 邮件通知节流：5分钟内同一个会话只发一次通知
-      (async () => {
+      const notifyPromise = (async () => {
         try {
           const shouldNotify = await services.conversations.shouldNotify(result.conversationId, 5);
           if (!shouldNotify) return;
-          
-          await services.email.sendNewMessageNotification({
+
+          const r = await services.email.sendNewMessageNotification({
             contactName: inbound.contactName || "匿名访客",
             channel: account.channelType === "telegram" ? "Telegram" : account.channelType === "web_chat" ? "网页" : account.channelType,
             messageContent: inbound.content || "(空消息)",
             conversationId: result.conversationId,
           });
-          
+
+          if (!r.success) {
+            logger.warn("email_notification_failed", {
+              requestId: c.get("requestId"),
+              conversationId: result.conversationId,
+              error: r.error,
+            });
+            await services.conversations.recordNotifyError(result.conversationId, "email:" + (r.error || "unknown")).catch(() => {});
+            return;
+          }
+
           // 标记已发送通知
           await services.conversations.markNotified(result.conversationId);
         } catch (e) {
@@ -61,6 +71,7 @@ webhookRoutes.post("/:channelAccountId", async (c) => {
           });
         }
       })();
+      c.executionCtx.waitUntil(notifyPromise);
     }
 
     if (result.aiMessage) {

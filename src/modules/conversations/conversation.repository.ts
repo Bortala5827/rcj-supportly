@@ -164,6 +164,13 @@ export class ConversationRepository {
       .run();
   }
 
+  async updateLastNotifyError(conversationId: string, error: string): Promise<void> {
+    await this.db
+      .prepare("UPDATE conversations SET last_notify_error = ?, updated_at = ? WHERE id = ?")
+      .bind(error, nowIso(), conversationId)
+      .run();
+  }
+
   async delete(conversationId: string): Promise<void> {
     await this.db
       .prepare("DELETE FROM conversations WHERE id = ?")

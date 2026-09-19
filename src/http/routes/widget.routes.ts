@@ -68,6 +68,11 @@ widgetRoutes.post("/conversations/:conversationId/messages", async (c) => {
         inboundMessageId: result.inboundMessage.id,
       })
     );
+    // 站长通知（邮件 + Telegram）改为 waitUntil 可靠触发，避免游离 Promise 被 Worker 取消
+    // notifyOwnerForNewMessage 内部已自行 catch 并记录失败，无需外层 .catch
+    c.executionCtx.waitUntil(
+      services.widget.notifyOwnerForNewMessage(result.conversationId, input.content, "网页")
+    );
   }
 
   return ok(result);

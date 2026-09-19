@@ -146,6 +146,10 @@ export class ConversationService {
     await this.conversations.updateLastNotifiedAt(conversationId, now);
   }
 
+  async recordNotifyError(conversationId: string, error: string): Promise<void> {
+    await this.conversations.updateLastNotifyError(conversationId, error);
+  }
+
   async deleteConversation(id: string): Promise<void> {
     await this.getConversation(id);
     // 先删除相关消息
