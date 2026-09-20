@@ -50,6 +50,11 @@ export class TelegramService {
     }
   }
 
+  // 通知通道自检：发一条测试消息（与真实提醒走同一条链路）
+  async sendTest(text: string): Promise<TelegramNotificationResult> {
+    return this.sendMessage(text);
+  }
+
   async sendNewMessageNotification(input: {
     contactName: string;
     channel: string;

@@ -9,6 +9,7 @@ import { channelsRoutes } from "./http/routes/channels.routes";
 import { conversationsRoutes } from "./http/routes/conversations.routes";
 import { healthRoutes } from "./http/routes/health.routes";
 import { knowledgeRoutes } from "./http/routes/knowledge.routes";
+import { selftestRoutes } from "./http/routes/selftest.routes";
 import { webhookRoutes } from "./http/routes/webhook.routes";
 import { widgetRoutes } from "./http/routes/widget.routes";
 
@@ -71,6 +72,7 @@ app.route("/api/admin", adminRoutes);
 app.route("/api/channels", channelsRoutes);
 app.route("/api/conversations", conversationsRoutes);
 app.route("/api/knowledge", knowledgeRoutes);
+app.route("/api/selftest", selftestRoutes);
 app.route("/api/widget", widgetRoutes);
 app.route("/webhooks", webhookRoutes);
 

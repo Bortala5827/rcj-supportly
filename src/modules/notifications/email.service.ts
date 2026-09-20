@@ -60,6 +60,11 @@ export class EmailService {
     }
   }
 
+  // 通知通道自检：发一封测试邮件（与真实提醒走同一条链路，只是内容是自检文案）
+  async sendTest(input: { subject: string; html: string; text?: string }): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    return this.sendNotification({ to: this.config.to, subject: input.subject, html: input.html, text: input.text });
+  }
+
   async sendNewMessageNotification(input: {
     contactName: string;
     channel: string;

@@ -101,6 +101,8 @@ export type Env = {
   FEISHU_APP_SECRET?: string;
   FEISHU_CHAT_ID?: string;
   FEISHU_NOTIFICATION_ENABLED?: string;
+  // 通知通道自检密钥（供 rcj-lab 聚合后台服务端调用 /api/selftest，不下发浏览器）
+  SELFTEST_KEY?: string;
 };
 
 export type AppContext = {

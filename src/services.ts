@@ -124,5 +124,6 @@ export function createServices(env: Env) {
     widget: widgetService,
     email: emailService,
     telegram: telegramService,
+    feishu: feishuService,
   };
 }
