@@ -95,6 +95,12 @@ export type Env = {
   TG_BOT_TOKEN?: string;
   TG_CHAT_ID?: string;
   TELEGRAM_NOTIFICATION_ENABLED?: string;
+  // 飞书站长通知配置（二选一：群机器人 webhook，或自建应用 app 凭证 + chat_id）
+  FEISHU_WEBHOOK_URL?: string;
+  FEISHU_APP_ID?: string;
+  FEISHU_APP_SECRET?: string;
+  FEISHU_CHAT_ID?: string;
+  FEISHU_NOTIFICATION_ENABLED?: string;
 };
 
 export type AppContext = {

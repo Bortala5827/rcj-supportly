@@ -36,6 +36,8 @@ export type ConversationRow = {
   assignee_admin_user_id: string | null;
   last_message_id: string | null;
   last_message_at: string | null;
+  /** 仅列表查询（listOpenConversations）会带上：末条消息预览 */
+  last_message?: string | null;
   unread_count: number;
   created_at: string;
   updated_at: string;

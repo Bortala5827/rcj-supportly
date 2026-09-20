@@ -20,6 +20,7 @@ import { AdminUserRepository } from "./modules/users/admin-user.repository";
 import { AuthService } from "./modules/users/auth.service";
 import { WidgetService } from "./modules/widget/widget.service";
 import { EmailService } from "./modules/notifications/email.service";
+import { FeishuService } from "./modules/notifications/feishu.service";
 import { TelegramService } from "./modules/notifications/telegram.service";
 
 export function createServices(env: Env) {
@@ -89,6 +90,15 @@ export function createServices(env: Env) {
     enabled: env.TELEGRAM_NOTIFICATION_ENABLED !== "false" && Boolean(env.TG_BOT_TOKEN && env.TG_CHAT_ID),
   });
 
+  // 飞书站长通知服务（缺密钥时优雅跳过）
+  const feishuService = new FeishuService({
+    webhookUrl: env.FEISHU_WEBHOOK_URL || "",
+    appId: env.FEISHU_APP_ID || "",
+    appSecret: env.FEISHU_APP_SECRET || "",
+    chatId: env.FEISHU_CHAT_ID || "",
+    enabled: env.FEISHU_NOTIFICATION_ENABLED !== "false",
+  });
+
   const widgetService = new WidgetService(
     channelService,
     conversationRepository,
@@ -98,7 +108,8 @@ export function createServices(env: Env) {
     mediaService,
     env.WIDGET_TOKEN_SECRET ?? env.JWT_SECRET ?? "supportly-dev-secret-change-before-deploy",
     emailService,
-    telegramService
+    telegramService,
+    feishuService
   );
 
   return {

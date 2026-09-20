@@ -17,6 +17,7 @@ import type { MessageRepository } from "../messages/message.repository";
 import type { Message } from "../messages/message.types";
 import type { RealtimeService } from "../realtime/realtime.service";
 import type { EmailService } from "../notifications/email.service";
+import type { FeishuService } from "../notifications/feishu.service";
 import type { TelegramService } from "../notifications/telegram.service";
 import type { VisitorTokenClaims } from "./widget.types";
 import { toWidgetMessage } from "./widget.types";
@@ -33,7 +34,8 @@ export class WidgetService {
     private readonly media: MediaService,
     private readonly tokenSecret: string,
     private readonly emailService?: EmailService,
-    private readonly telegramService?: TelegramService
+    private readonly telegramService?: TelegramService,
+    private readonly feishuService?: FeishuService
   ) {}
 
   async createConversation(input: {
@@ -197,7 +199,7 @@ export class WidgetService {
 
   // 站长通知（邮件 + Telegram）节流：5分钟内同一个会话只发一次通知
   private async sendOwnerNotification(conversationId: string, messageContent: string, channel: string): Promise<void> {
-    if (!this.emailService && !this.telegramService) return;
+    if (!this.emailService && !this.telegramService && !this.feishuService) return;
 
     const shouldNotify = await this.conversationService.shouldNotify(conversationId, 5);
     if (!shouldNotify) return;
@@ -219,14 +221,26 @@ export class WidgetService {
       conversationId,
     }) : { success: false, error: "telegram service not configured" };
 
+    // 飞书为「附加通道」：未配置时 skipped=true，不参与结果判定；配置后失败也不回滚邮件/Telegram 的成功态
+    // （否则会因未 markNotified 而重试，导致站长收到重复邮件）
+    const feishu = this.feishuService
+      ? await this.feishuService.sendNewMessageNotification({ contactName, channel, messageContent, conversationId })
+      : { success: true, skipped: true as const };
+    const feishuFailed = !feishu.success && !feishu.skipped;
+
     if (!email.success || !telegram.success) {
       const parts: string[] = [];
       if (!email.success) parts.push("email:" + (email.error || "unknown"));
       if (!telegram.success) parts.push("tg:" + (telegram.error || "unknown"));
+      if (feishuFailed) parts.push("feishu:" + (feishu.error || "unknown"));
       const detail = parts.join(" | ");
       logger.warn("widget_owner_notification_failed", { conversationId, error: detail });
       await this.conversationService.recordNotifyError(conversationId, detail).catch(() => {});
       return; // 不标记已通知，下次消息仍可重试
+    }
+
+    if (feishuFailed) {
+      logger.warn("widget_owner_feishu_failed", { conversationId, error: feishu.error });
     }
 
     await this.conversationService.markNotified(conversationId);
