@@ -10,7 +10,8 @@ export class ConversationRepository {
     const result = await this.db
       .prepare(
         `
-        SELECT *
+        SELECT *,
+          (SELECT content FROM messages WHERE messages.conversation_id = conversations.id ORDER BY created_at DESC LIMIT 1) AS last_message
         FROM conversations
         WHERE status = 'open'
         ORDER BY last_message_at DESC

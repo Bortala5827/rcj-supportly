@@ -20,6 +20,7 @@ export type Conversation = {
   resolvedAt: string | null;
   lastNotifiedAt: string | null;
   lastNotifyError: string | null;
+  lastMessage: string | null;
 };
 
 export type ConversationRow = {
@@ -72,5 +73,6 @@ export function mapConversation(row: ConversationRow): Conversation {
     resolvedAt: row.resolved_at,
     lastNotifiedAt: row.last_notified_at,
     lastNotifyError: row.last_notify_error,
+    lastMessage: row.last_message ?? null,
   };
 }
