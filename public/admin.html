@@ -156,26 +156,48 @@
     function selectConversation(id) {
       currentConv = id;
       loadConversations();
+      renderChatShell(id);
       loadMessages(id);
       startPolling();
+    }
+
+    // 只渲染会话窗口骨架（header + 空消息容器 + 输入区）。切换会话时调用一次。
+    // 轮询和发消息只刷新 #messages，绝不触碰输入框，避免用户打字到一半被销毁。
+    function renderChatShell(id) {
+      var chat = document.getElementById('chat');
+      chat.innerHTML = '<div class="chat-header"><h2>会话详情</h2><div class="chat-actions"><button onclick="resolveConv()">标记已解决</button><button onclick="deleteConv(\'' + id + '\')">删除</button></div></div>' +
+        '<div class="messages" id="messages"></div>' +
+        '<div class="chat-input"><input type="text" id="msgInput" placeholder="输入回复..." maxlength="2000" autocomplete="off"><button id="sendBtn" onclick="sendMessage()">发送</button></div>';
+      var input = document.getElementById('msgInput');
+      // 中文输入法组合态（isComposing=true）时按 Enter 用于选词，不触发发送
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.isComposing && !e.repeat) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      input.focus();
     }
 
     function loadMessages(id) {
       fetch(API + '/api/conversations/' + id + '/messages', { headers: authHeaders() })
         .then(function(r) { return r.json(); })
         .then(function(d) {
-          var chat = document.getElementById('chat');
-          chat.innerHTML = '<div class="chat-header"><h2>会话详情</h2><div class="chat-actions"><button onclick="resolveConv()">标记已解决</button><button onclick="deleteConv(\'' + id + '\')">删除</button></div></div>' +
-            '<div class="messages" id="messages"></div>' +
-            '<div class="chat-input"><input type="text" id="msgInput" placeholder="输入回复..." maxlength="2000"><button onclick="sendMessage()">发送</button></div>';
           var messagesEl = document.getElementById('messages');
+          if (!messagesEl) return; // 骨架已被切换/清空，忽略本次
+          // 记住用户当前是否正在向上滚动看历史，避免自动滚到底打断阅读
+          var stickToBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 60;
+          var prevCount = messagesEl.children.length;
+          messagesEl.innerHTML = '';
           if (!d.data || d.data.length === 0) {
             messagesEl.innerHTML = '<div class="empty" style="height:200px;">暂无消息</div>';
             return;
           }
           d.data.forEach(function(msg) { renderMessage(msg, messagesEl); });
-          messagesEl.scrollTop = messagesEl.scrollHeight;
-          document.getElementById('msgInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') sendMessage(); });
+          // 仅在新增消息且用户本就在底部时才自动滚底，防止读历史被打断
+          if (stickToBottom || prevCount === 0) {
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+          }
         }).catch(function(e) { console.error('加载消息失败', e); });
     }
 
@@ -188,21 +210,30 @@
 
     function sendMessage() {
       var input = document.getElementById('msgInput');
+      if (!input) return;
       var text = input.value.trim();
       if (!text || !currentConv) return;
-      input.value = '';
-      var btn = document.querySelector('.chat-input button');
-      btn.disabled = true;
+      var btn = document.getElementById('sendBtn');
+      if (btn) btn.disabled = true;
       fetch(API + '/api/conversations/' + currentConv + '/messages', {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ content: text })
       }).then(function(r) { return r.json(); })
         .then(function(d) {
-          if (d.error) { alert('发送失败：' + d.error.message); return; }
+          if (d.error) {
+            // 发送失败：把内容回填到输入框，用户不必重打
+            if (input) { input.value = text; input.focus(); }
+            alert('发送失败：' + d.error.message);
+            return;
+          }
+          if (input) { input.value = ''; input.focus(); }
           loadMessages(currentConv);
-        }).catch(function(e) { alert('发送失败：' + e.message); })
-        .finally(function() { btn.disabled = false; });
+        }).catch(function(e) {
+          if (input) { input.value = text; input.focus(); }
+          alert('发送失败：' + e.message);
+        })
+        .finally(function() { if (btn) btn.disabled = false; });
     }
 
     function resolveConv() {
