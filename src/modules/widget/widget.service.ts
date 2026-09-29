@@ -265,7 +265,7 @@ export class WidgetService {
     }
   }
 
-  async completeVisitorMessage(input: { conversationId: string; inboundMessageId: string }): Promise<void> {
+  async completeVisitorMessage(input: { conversationId: string; inboundMessageId: string; skipAiReply?: boolean }): Promise<void> {
     try {
       const conversation = await this.conversations.findById(input.conversationId);
       const inboundMessage = await this.messages.findById(input.inboundMessageId);
@@ -275,6 +275,10 @@ export class WidgetService {
         conversation,
         message: inboundMessage,
       });
+
+      // AI 回复由前端兜底（shop 站走主站 955827.xyz/api/ai-chat），后端不再生成冗余 AI 回复
+      // 需要后端 AI 兜底的接入方，可跳过 skipAiReply 选项
+      if (input.skipAiReply) return;
 
       const aiMessage = await this.conversationService.createAiReply({
         conversationId: conversation.id,

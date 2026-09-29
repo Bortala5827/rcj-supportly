@@ -66,6 +66,7 @@ widgetRoutes.post("/conversations/:conversationId/messages", async (c) => {
       services.widget.completeVisitorMessage({
         conversationId: result.conversationId,
         inboundMessageId: result.inboundMessage.id,
+        skipAiReply: true, // AI 回复由 shop 前端兜底（主站 955827.xyz/api/ai-chat），后端不再生成冗余回复
       })
     );
     // 站长通知（邮件 + Telegram）改为 waitUntil 可靠触发，避免游离 Promise 被 Worker 取消
