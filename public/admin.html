@@ -88,8 +88,13 @@
     var token = localStorage.getItem('rcj_admin_token');
     var currentConv = null;
     var pollTimer = null;
+    // WebSocket 实时推送 + 断连兜底轮询
+    var ws = null;
+    var wsReconnectDelay = 0; // 指数退避：0→1s→2s→4s→8s→顶30s
+    var wsOk = false;
+    var wsPingTimer = null;
 
-    if (token) { showApp(); loadConversations(); }
+    if (token) { showApp(); loadConversations(); connectWebSocket(); }
 
     function doLogin() {
       var email = document.getElementById('loginEmail').value;
@@ -106,6 +111,7 @@
           localStorage.setItem('rcj_admin_token', token);
           showApp();
           loadConversations();
+          connectWebSocket();
         }).catch(function(e) { errorEl.textContent = '网络错误：' + e.message; errorEl.style.display = 'block'; });
     }
 
@@ -113,6 +119,7 @@
       localStorage.removeItem('rcj_admin_token');
       token = null;
       stopPolling();
+      closeWebSocket();
       document.getElementById('app').classList.remove('show');
       document.getElementById('loginPage').style.display = 'flex';
     }
@@ -158,7 +165,7 @@
       loadConversations();
       renderChatShell(id);
       loadMessages(id);
-      startPolling();
+      // 不再调 startPolling()——WebSocket 全局推送，断连时会自动启用兜底轮询
     }
 
     // 只渲染会话窗口骨架（header + 空消息容器 + 输入区）。切换会话时调用一次。
@@ -247,7 +254,8 @@
 
     function startPolling() {
       stopPolling();
-      pollTimer = setInterval(function() { if (currentConv) loadMessages(currentConv); loadConversations(); }, 5000);
+      // 兜底轮询：只在 WebSocket 断连时才用，频率放宽到 10s 降低 D1 压力
+      pollTimer = setInterval(function() { if (currentConv) loadMessages(currentConv); loadConversations(); }, 10000);
     }
 
     function deleteConv(id) {
@@ -286,6 +294,79 @@
       if (!iso) return '';
       var d = new Date(iso);
       return d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    // ========== WebSocket 实时推送 ==========
+    function connectWebSocket() {
+      if (!token) return;
+      try {
+        var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        var url = proto + '//' + location.host + '/api/admin/ws?token=' + encodeURIComponent(token);
+        ws = new WebSocket(url);
+
+        ws.onopen = function() {
+          wsOk = true;
+          wsReconnectDelay = 0;
+          stopPolling(); // WebSocket 活着就不需要兜底轮询
+          // 30s 心跳 ping，保持连接活跃
+          wsPingTimer = setInterval(function() {
+            if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'ping' }));
+          }, 30000);
+        };
+
+        ws.onmessage = function(ev) {
+          var msg;
+          try { msg = JSON.parse(ev.data); } catch(e) { return; }
+          if (!msg || !msg.type) return;
+
+          if (msg.type === 'message.new') {
+            // 任意会话有新消息：刷新侧边栏；如果是当前会话，刷新消息列表
+            loadConversations();
+            if (currentConv && msg.conversationId === currentConv) {
+              loadMessages(currentConv);
+            }
+          } else if (msg.type === 'conversation.updated') {
+            // 会话状态变更（解决/删除等）：刷新侧边栏
+            loadConversations();
+          } else if (msg.type === 'pong') {
+            // 心跳响应，什么都不用做
+          } else if (msg.type === 'error') {
+            console.warn('ws event error', msg.code, msg.message);
+          }
+        };
+
+        ws.onclose = function() {
+          wsOk = false;
+          if (wsPingTimer) { clearInterval(wsPingTimer); wsPingTimer = null; }
+          ws = null;
+          // 启用兜底轮询，等会再试重连
+          startPolling();
+          scheduleWsReconnect();
+        };
+
+        ws.onerror = function() {
+          // onclose 会被紧接着触发，那里处理重连即可
+        };
+      } catch(e) {
+        console.warn('ws connect failed', e);
+        startPolling();
+        scheduleWsReconnect();
+      }
+    }
+
+    function scheduleWsReconnect() {
+      if (wsReconnectDelay === 0) wsReconnectDelay = 1000;
+      else wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30000);
+      setTimeout(function() {
+        if (token && !wsOk) connectWebSocket();
+      }, wsReconnectDelay);
+    }
+
+    function closeWebSocket() {
+      if (wsPingTimer) { clearInterval(wsPingTimer); wsPingTimer = null; }
+      if (ws) { try { ws.close(); } catch(e) {} ws = null; }
+      wsOk = false;
+      wsReconnectDelay = 0;
     }
   </script>
 </body>
