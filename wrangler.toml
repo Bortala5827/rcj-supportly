@@ -34,7 +34,9 @@ new_sqlite_classes = ["VisitorStream", "AdminStream"]
 # 邮件通知配置（使用 Resend 免费 API，每天100封）
 # 注册地址：https://resend.com
 # 注意：RESEND_API_KEY 为敏感信息，请使用 `wrangler secret put RESEND_API_KEY` 设置
-EMAIL_NOTIFICATION_ENABLED = "true"
+EMAIL_NOTIFICATION_ENABLED = "false"
+# 邮件通知保留代码但默认关闭——对话提醒走 Telegram + 飞书实时推送，
+# 邮件延迟高且易进垃圾邮件；订单/支付等需存档留痕的正式通知再单独开
 # RESEND_API_KEY 通过 wrangler secret put 设置，不写在代码中
 EMAIL_FROM = "RCJ 客服 <noreply@955827.xyz>"
 EMAIL_NOTIFY_TO = "1430115702@qq.com"

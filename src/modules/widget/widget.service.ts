@@ -197,9 +197,11 @@ export class WidgetService {
     };
   }
 
-  // 站长通知（邮件 + Telegram）节流：5分钟内同一个会话只发一次通知
+  // 站长通知节流：5分钟内同一个会话只发一次通知
+  // 必需通道：Telegram + 飞书（至少一个成功才算通知成功）
+  // 附加通道：邮件（保留代码但默认关闭，用于订单等需存档留痕的场景）
   private async sendOwnerNotification(conversationId: string, messageContent: string, channel: string): Promise<void> {
-    if (!this.emailService && !this.telegramService && !this.feishuService) return;
+    if (!this.telegramService && !this.feishuService && !this.emailService) return;
 
     const shouldNotify = await this.conversationService.shouldNotify(conversationId, 5);
     if (!shouldNotify) return;
@@ -207,13 +209,7 @@ export class WidgetService {
     const conversation = await this.conversations.findById(conversationId);
     const contactName = conversation?.contactName || "匿名访客";
 
-    const email = this.emailService ? await this.emailService.sendNewMessageNotification({
-      contactName,
-      channel,
-      messageContent,
-      conversationId,
-    }) : { success: false, error: "email service not configured" };
-
+    // 必需通道：Telegram
     const telegram = this.telegramService ? await this.telegramService.sendNewMessageNotification({
       contactName,
       channel,
@@ -221,26 +217,38 @@ export class WidgetService {
       conversationId,
     }) : { success: false, error: "telegram service not configured" };
 
-    // 飞书为「附加通道」：未配置时 skipped=true，不参与结果判定；配置后失败也不回滚邮件/Telegram 的成功态
-    // （否则会因未 markNotified 而重试，导致站长收到重复邮件）
-    const feishu = this.feishuService
-      ? await this.feishuService.sendNewMessageNotification({ contactName, channel, messageContent, conversationId })
-      : { success: true, skipped: true as const };
-    const feishuFailed = !feishu.success && !feishu.skipped;
+    // 必需通道：飞书
+    const feishu = this.feishuService ? await this.feishuService.sendNewMessageNotification({
+      contactName,
+      channel,
+      messageContent,
+      conversationId,
+    }) : { success: false, error: "feishu service not configured" };
 
-    if (!email.success || !telegram.success) {
+    // 附加通道：邮件（默认关闭，开了也是 best-effort，失败不影响主流程）
+    let emailFailed = false;
+    if (this.emailService) {
+      const email = await this.emailService.sendNewMessageNotification({
+        contactName,
+        channel,
+        messageContent,
+        conversationId,
+      });
+      if (!email.success) {
+        emailFailed = true;
+        logger.warn("widget_owner_email_failed", { conversationId, error: email.error || "unknown" });
+      }
+    }
+
+    const primaryOk = telegram.success || feishu.success;
+    if (!primaryOk) {
       const parts: string[] = [];
-      if (!email.success) parts.push("email:" + (email.error || "unknown"));
-      if (!telegram.success) parts.push("tg:" + (telegram.error || "unknown"));
-      if (feishuFailed) parts.push("feishu:" + (feishu.error || "unknown"));
+      parts.push("tg:" + (telegram.error || "unknown"));
+      parts.push("feishu:" + (feishu.error || "unknown"));
       const detail = parts.join(" | ");
       logger.warn("widget_owner_notification_failed", { conversationId, error: detail });
       await this.conversationService.recordNotifyError(conversationId, detail).catch(() => {});
       return; // 不标记已通知，下次消息仍可重试
-    }
-
-    if (feishuFailed) {
-      logger.warn("widget_owner_feishu_failed", { conversationId, error: feishu.error });
     }
 
     await this.conversationService.markNotified(conversationId);
