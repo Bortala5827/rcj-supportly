@@ -45,6 +45,8 @@ CREATE TABLE conversations (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   resolved_at TEXT,
+  -- 通知失败原因（与 0007_add_last_notify_error.sql 对应；此处一并建出，新环境初始化即可拥有该列）
+  last_notify_error TEXT,
   FOREIGN KEY (channel_account_id) REFERENCES channel_accounts(id),
   FOREIGN KEY (assignee_admin_user_id) REFERENCES admin_users(id)
 );
