@@ -1,8 +1,8 @@
 # Supportly 知识库总览
 
-版本：2026-05
+版本：2026-10
 
-适用范围：Supportly AI 智能客服平台的产品咨询、接入指导、后台使用、知识库管理、AI 回复、故障排查。
+适用范围：Supportly AI 智能客服平台的产品咨询、接入指导、后台使用、知识库管理、AI 回复、故障排查；以及 RCJ 生态各站点（主站 / Exam / FaceTalk / Voice / Blog / Shop 等）的服务咨询（见 09-rcj-ecosystem.md）。
 
 ## 产品定位
 
