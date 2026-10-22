@@ -115,11 +115,12 @@
     </div>
 
     <div class="card">
-      <h2>📋 嵌入示例</h2>
-      <p class="code-label">在你的网站底部加入这一行即可：</p>
-      <div class="code-block"><span class="comment">&lt;!-- Supportly 客服 widget --&gt;</span>
-&lt;script src="https://support.955827.xyz/widget.js"
-        data-channel-id="你的频道ID"&gt;&lt;/script&gt;</div>
+      <h2>🔌 接口接入</h2>
+      <p class="code-label">聊天前端由各站点自行内嵌，后端 API 基址：https://support.955827.xyz/api/widget</p>
+      <div class="code-block"><span class="comment">// 1. 创建会话，响应内含 visitorToken</span>
+POST https://support.955827.xyz/api/widget/conversations
+<span class="comment">// 2. 携带 Authorization: Bearer &lt;visitorToken&gt; 发消息</span>
+POST /api/widget/conversations/&lt;conversationId&gt;/messages</div>
     </div>
 
     <div class="cta-row">

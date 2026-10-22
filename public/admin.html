@@ -94,6 +94,13 @@
     var wsOk = false;
     var wsPingTimer = null;
 
+    // 转义一切用户可控字段（TG 昵称、访客消息、会话预览等），防止存储型 XSS 注入 innerHTML
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+      });
+    }
+
     if (token) { showApp(); loadConversations(); connectWebSocket(); }
 
     function doLogin() {
@@ -146,9 +153,9 @@
           d.data.forEach(function(conv) {
             var div = document.createElement('div');
             div.className = 'conv-item' + (currentConv === conv.id ? ' active' : '');
-            div.innerHTML = '<div class="conv-name">' + (conv.contactName || '匿名访客') + '</div>' +
-              '<div class="conv-preview">' + (conv.lastMessage || '暂无消息') + '</div>' +
-              '<div class="conv-time">' + formatTime(conv.updatedAt || conv.createdAt) + '</div>';
+            div.innerHTML = '<div class="conv-name">' + escapeHtml(conv.contactName || '匿名访客') + '</div>' +
+              '<div class="conv-preview">' + escapeHtml(conv.lastMessage || '暂无消息') + '</div>' +
+              '<div class="conv-time">' + escapeHtml(formatTime(conv.updatedAt || conv.createdAt)) + '</div>';
             div.onclick = function() { selectConversation(conv.id); };
             var del = document.createElement('button');
             del.textContent = '删除';
@@ -171,6 +178,8 @@
     // 只渲染会话窗口骨架（header + 空消息容器 + 输入区）。切换会话时调用一次。
     // 轮询和发消息只刷新 #messages，绝不触碰输入框，避免用户打字到一半被销毁。
     function renderChatShell(id) {
+      // 会话 ID 仅允许字母数字/_/-，拦截异常字符进入 onclick 内联JS
+      if (!/^[A-Za-z0-9_-]+$/.test(id)) { return; }
       var chat = document.getElementById('chat');
       chat.innerHTML = '<div class="chat-header"><h2>会话详情</h2><div class="chat-actions"><button onclick="resolveConv()">标记已解决</button><button onclick="deleteConv(\'' + id + '\')">删除</button></div></div>' +
         '<div class="messages" id="messages"></div>' +
@@ -211,7 +220,7 @@
     function renderMessage(msg, container) {
       var div = document.createElement('div');
       div.className = 'msg ' + (msg.direction === 'outbound' || msg.senderType === 'agent' ? 'agent' : 'customer');
-      div.innerHTML = '<div class="msg-bubble">' + (msg.content || '(空消息)') + '</div>';
+      div.innerHTML = '<div class="msg-bubble">' + escapeHtml(msg.content || '(空消息)') + '</div>';
       container.appendChild(div);
     }
 

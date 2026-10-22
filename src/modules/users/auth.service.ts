@@ -55,22 +55,14 @@ export class AuthService {
     };
   }
 
-  async requireAdminUser(input: { adminUserId?: string; authorization?: string }) {
+  async requireAdminUser(input: { authorization?: string }) {
     const token = parseBearerToken(input.authorization);
-    if (token) {
-      const payload = await this.verifyToken(token);
-      const user = await this.adminUsers.findById(payload.sub);
-      if (!user) {
-        throw new AppError("UNAUTHORIZED", "Admin user not found", 401);
-      }
-      return user;
+    if (!token) {
+      throw new AppError("UNAUTHORIZED", "Missing admin token", 401);
     }
 
-    if (!input.adminUserId) {
-      throw new AppError("UNAUTHORIZED", "Missing admin user", 401);
-    }
-
-    const user = await this.adminUsers.findById(input.adminUserId);
+    const payload = await this.verifyToken(token);
+    const user = await this.adminUsers.findById(payload.sub);
     if (!user) {
       throw new AppError("UNAUTHORIZED", "Admin user not found", 401);
     }

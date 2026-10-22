@@ -12,7 +12,6 @@ adminRoutes.get("/ws", async (c) => {
   const services = createServices(c.env);
   const token = c.req.query("token")?.trim();
   const user = await services.auth.requireAdminUser({
-    adminUserId: c.req.query("adminUserId")?.trim() || c.req.header("x-admin-user-id"),
     authorization: token ? `Bearer ${token}` : c.req.header("authorization"),
   });
 
